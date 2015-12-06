@@ -78,7 +78,10 @@ public class Extractor {
 			Document doc = Jsoup.connect(url).get();
 			Elements aElements = doc.select("a");
 			for (int i = 0; i < aElements.size(); i++) {
-				hrefList.add(aElements.get(i).attr("href"));
+				String href = aElements.get(i).attr("href");
+				if (href.startsWith("http:")) {
+					hrefList.add(href);
+				}
 			}
 		} catch (Throwable t) {
 			StringWriter sw = new StringWriter();

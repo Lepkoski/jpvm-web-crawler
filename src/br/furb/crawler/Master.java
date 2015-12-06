@@ -1,5 +1,11 @@
 package br.furb.crawler;
 
+import java.util.ArrayDeque;
+import java.util.Queue;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import jpvm.jpvmBuffer;
 import jpvm.jpvmEnvironment;
 import jpvm.jpvmException;
@@ -10,6 +16,7 @@ public class Master {
 	private static int numWorkers = 4;
 	private static jpvmEnvironment environment;
 	private static jpvmTaskId taskId; 
+	private static Queue<String> urls = new ArrayDeque<String>();
 	
     public static void main(String[] args) throws Throwable {
 		environment = new jpvmEnvironment();
@@ -18,7 +25,16 @@ public class Master {
 		System.out.println("Task id = " + taskId.toString());
 		
 		if (environment.pvm_parent() == jpvmEnvironment.PvmNoParent) {
-			executar();
+			
+			urls.add("http://www.google.com.br");
+			
+
+			while (urls.size() > 0) {
+				executar();
+			}
+			
+			environment.pvm_exit();
+			
 		} else {
 			throw new Exception("A classe " + Master.class.getName() + " não pode ser executada como slave");
 		}
@@ -31,22 +47,27 @@ public class Master {
 		
 		imprimirWorkers(taskIds);
 		
-		for (int i = 0; i < numWorkers; i++) {
-			System.out.println("\nMandando mensagem para o worker " + i);
+		for (int i = 0; i < numWorkers && urls.size() > 0; i++) {
+			System.out.println("\nMandando mensagem para o worker #" + i + ": " + taskIds[i].toString());
 			
 			jpvmBuffer buffer = new jpvmBuffer();
-			buffer.pack("http://www.google.com.br");
+			buffer.pack(urls.poll());
 			environment.pvm_send(buffer, taskIds[i], i);
 			
-			System.out.println("Resposta recebida");
 			jpvmMessage message = environment.pvm_recv();
 			String str = message.buffer.upkstr();
-			System.out.println("Recebeu: " + str);
-			System.out.println("Com a tag: " + message.messageTag);
-			System.out.println("Origem: " + message.sourceTid.toString());
+			System.out.println("Resposta recebida");
+//			System.out.println("Recebeu: " + str);
+//			System.out.println("Com a tag: " + message.messageTag);
+//			System.out.println("Origem: " + message.sourceTid.toString());
+			
+			JSONArray links = new JSONObject(str).getJSONArray("links");
+			for (int j = 0; j < links.length(); j++) {
+				String link = links.getString(j);
+				System.out.println(link);
+				urls.add(link);
+			}
 		}
-		
-		environment.pvm_exit();
 	}
 
 	private static void imprimirWorkers(jpvmTaskId[] taskIds) {
