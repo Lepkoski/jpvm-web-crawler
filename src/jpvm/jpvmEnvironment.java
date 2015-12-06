@@ -393,12 +393,12 @@ class jpvmEnvironment {
                 String userName = System.getProperty("user.name");
                 String fileName = null;
 		if(osName.equals("Windows 95") ||
-		   osName.equals("Windows NT") || true ||
+		   osName.equals("Windows NT") ||
 		   osName.equals("Windows 3.1")) {
 			fileName = "c:\\temp\\jpvmd-"+userName+".txt";
 		}
 		else {
-			fileName = "/tmp/jpvmd."+userName;
+			fileName = "/Users/lepkoski/Documents/workspaces/EffaciousDuck/temp/jpvmd."+userName;
 		}
 		return fileName;
 	}

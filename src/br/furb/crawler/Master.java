@@ -35,7 +35,7 @@ public class Master {
 			System.out.println("\nMandando mensagem para o worker " + i);
 			
 			jpvmBuffer buffer = new jpvmBuffer();
-			buffer.pack("Servidor, id: " + environment.pvm_mytid().toString());
+			buffer.pack("http://www.google.com.br");
 			environment.pvm_send(buffer, taskIds[i], i);
 			
 			System.out.println("Resposta recebida");

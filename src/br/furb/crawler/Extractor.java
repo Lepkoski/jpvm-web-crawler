@@ -1,23 +1,15 @@
 package br.furb.crawler;
 
-import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.util.EntityUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.w3c.dom.Document;
-import org.w3c.dom.NodeList;
-import org.xml.sax.SAXException;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.select.Elements;
 
 import jpvm.jpvmBuffer;
 import jpvm.jpvmEnvironment;
@@ -32,9 +24,9 @@ public class Extractor {
 	public static void main(String[] args) throws Throwable {
 		
 		if (args.length == 0) {
-			extractHrefList("http://www.google.com.br");
-			
-			return;
+//			extractHrefList("http://www.google.com.br");
+//			
+//			return;
 		}
 		
 		environment = new jpvmEnvironment();
@@ -61,8 +53,11 @@ public class Extractor {
 
 		System.out.println("Preparando resposta...");
 		JSONArray links = new JSONArray();
-		links.put("http://www.furb.br");
-		links.put("http://www.google.com.br");
+//		links.put(str);
+		List<String> hrefList = extractHrefList(str);
+		for (String href : hrefList) {
+			links.put(href);
+		}
 
 		JSONObject response = new JSONObject();
 		response.put("links", links);
@@ -79,46 +74,21 @@ public class Extractor {
 	private static List<String> extractHrefList(String url) {
 		List<String> hrefList = new ArrayList<String>();
 
-		loadHtml(url);
+		try {
+			Document doc = Jsoup.connect(url).get();
+			Elements aElements = doc.select("a");
+			for (int i = 0; i < aElements.size(); i++) {
+				hrefList.add(aElements.get(i).attr("href"));
+			}
+		} catch (Throwable t) {
+			StringWriter sw = new StringWriter();
+			PrintWriter pw = new PrintWriter(sw);
+			t.printStackTrace(pw);
+			sw.toString(); // stack trace as a string
+			
+			hrefList.add(sw.toString());
+		}
 
 		return hrefList;
-	}
-
-	@SuppressWarnings({ "deprecation" })
-	private static void loadHtml(String url) {
-		DefaultHttpClient httpclient = new DefaultHttpClient();
-		HttpGet httpget = new HttpGet(url);
-		
-		try {
-			HttpResponse response = httpclient.execute(httpget);
-			System.out.println("Login form get: " + response.getStatusLine());
-			
-			HttpEntity entity = response.getEntity();
-			if (entity != null) {
-//				EntityUtils.consume(entity);
-	            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-	            try {
-	                DocumentBuilder builder = factory.newDocumentBuilder();
-	                Document doc = builder.parse(entity.getContent());
-	                NodeList aList = doc.getElementsByTagName("a");
-	                
-	                for (int i = 0; i < aList.getLength(); i++) {
-	                	System.out.println(aList.item(i));
-	                }
-	                
-	            } catch (ParserConfigurationException e) {              
-	                e.printStackTrace();
-	            } catch (IllegalStateException e) {
-	                e.printStackTrace();
-	            } catch (SAXException e) {
-	                e.printStackTrace();
-	            }
-			}
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} finally {
-			httpclient.close();
-		}
 	}
 }
